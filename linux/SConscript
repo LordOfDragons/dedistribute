@@ -12,7 +12,7 @@ sources.append('src/String.cpp')
 sources.append('src/File.cpp')
 sources.append('src/Exception.cpp')
 
-temp = env.Program('launch64_temp', sources)
+temp = env.Program('launcher64_temp', sources)
 
 def stripBuild(target, source, env):
 	src = source[0].abspath
@@ -24,6 +24,6 @@ def stripBuild(target, source, env):
 	if not env.RunExternalCommand(script):
 		raise Exception('Failed running strip')
 
-app = env.Command('launch64', temp, env.Action(stripBuild, 'Strip $TARGET'))
+app = env.Command('launcher64', temp, env.Action(stripBuild, 'Strip $TARGET'))
 
 Default(app)
