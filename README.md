@@ -21,11 +21,11 @@ Now copy your *.delga file next to the Launcher.ini file. The directory
 structure should look like this:
 
 - Content
-  - Launcher.ini [all platforms]
-  - MyGame.delga [all platforms]
-  - Launcher64.exe [windows]
-  - install_dragengine.sh [linux]
-  - launcher64 [linux]
+  - Launcher.ini  (all platforms)
+  - MyGame.delga  (all platforms)
+  - Launcher64.exe  (windows only)
+  - install_dragengine.sh  (linux only)
+  - launcher64  (linux only)
 
 Edit Launcher.ini and change the "File=" value to match your *.delga file.
 Optionally you can put your *.delga file (and patches) into a subdirectory.
@@ -34,7 +34,7 @@ using "/" as path separator.
 
 The content of the "Content" directory can now be uploaded to the distribution
 platform. If you want to support only one platform you can delete all files
-except those marked "[all platforms]" or marked with your platform of choice.
+except those marked "all platforms" or marked with your platform of choice.
 
 In the distribution platform enter the executable name of the matching
 platform without any arguments:
