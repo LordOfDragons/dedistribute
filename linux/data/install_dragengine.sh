@@ -74,17 +74,17 @@ echo ""
 echo "(Additional information can be found at https://dragondreams.ch/?page_id=567)"
 echo ""
 echo -e "\e[91m\e[1m"
-read -p "Do you want to apply these changes to your system? [y/n] " ans
+read -p "Do you want to apply these changes to your system? [Y/n] " ans
 echo -e "\e[39m\e[0m"
-if [[ "${ans:0:1}" == "y" || "${ans:0:1}" == "Y" ]]
+if [[ "${ans}" == "" || "${ans:0:1}" == "y" || "${ans:0:1}" == "Y" ]]
 then
 	echo "To apply the changes the installer requires super user permissions."
 	echo "Please enter the super user password if asked."
 	echo ""
 	echo -e "\e[91m\e[1m"
-	read -p "Do you want to continue? [y/n] " ans
+	read -p "Do you want to continue? [Y/n] " ans
 	echo -e "\e[39m\e[0m"
-	if [[ "${ans:0:1}" == "y" || "${ans:0:1}" == "Y" ]]
+	if [[ "${ans}" == "" || "${ans:0:1}" == "y" || "${ans:0:1}" == "Y" ]]
 	then
 		install_dragengine
 		exit 0
