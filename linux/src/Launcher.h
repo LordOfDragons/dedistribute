@@ -29,6 +29,7 @@ class Launcher{
 private:
 	String pLauncherDirectory;
 	LauncherIni *pLauncherIni;
+	String pLaunchArgs;
 	
 public:
 	Launcher(int argc, char **argv);

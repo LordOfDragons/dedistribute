@@ -30,7 +30,15 @@
 #include "String.h"
 
 Launcher::Launcher(int argc, char **argv) :
-pLauncherIni(nullptr){
+pLauncherIni(nullptr)
+{
+	int i;
+	for(i=1; i<argc; i++){
+		if(pLaunchArgs.Length() > 0){
+			pLaunchArgs += " ";
+		}
+		pLaunchArgs += argv[i];
+	}
 }
 
 Launcher::~Launcher(){
@@ -119,10 +127,31 @@ void Launcher::pLaunchDelga(){
 		return;
 	}
 	
-	// launch delga file. this should work now
-	String cmdline("xdg-open \"");
-	cmdline += pLauncherDirectory + pLauncherIni->Get("File");
-	cmdline += '"';
+	// launch delga file. this should work now.
+	// 
+	// problem is xdg-open supports no command line arguments. we thus have to
+	// use dragengine launcher directly. we need in the future a way to set
+	// a link "delauncher" which allows the user to select which launcher to
+	// open. the launcher is required to support command line of this form:
+	// 
+	//   delauncher <options> <delga> <arguments>
+	// 
+	// where <options> can be:
+	//   
+	//   --profile=profile
+	String cmdline;
+	
+	if(pLaunchArgs.Length() > 0){
+		cmdline = "delauncher-gui \"";
+		cmdline += pLauncherDirectory + pLauncherIni->Get("File");
+		cmdline += "\" ";
+		cmdline += pLaunchArgs;
+		
+	}else{
+		cmdline = "xdg-open \"";
+		cmdline += pLauncherDirectory + pLauncherIni->Get("File");
+		cmdline += '"';
+	}
 	
 	if(system(cmdline) != 0){
 		throw Exception("Failed launching.");
