@@ -23,6 +23,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 #include "framework.h"
 
 class WindowSplash;
@@ -35,6 +36,7 @@ private:
 	std::unique_ptr<WindowSplash> pWindowSplash;
 	std::wstring pLauncherDirectory;
 	std::unique_ptr<LauncherIni> pLauncherIni;
+	std::vector<std::wstring> pLaunchArgs;
 
 	static Launcher *pTheLauncher;
 
@@ -59,6 +61,9 @@ public:
 
 	/** WString to String. */
 	static std::string ToString(const std::wstring &string);
+
+	/** URL Encode. */
+	static std::wstring UrlEncode(const std::wstring &string);
 
 private:
 	int pRunMessageLoop();

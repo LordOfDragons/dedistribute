@@ -26,6 +26,8 @@
 
 #include <stdexcept>
 #include <sstream>
+#include <iomanip>
+#include <shellapi.h>
 
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.System.h>
@@ -41,6 +43,17 @@ Launcher::Launcher(HINSTANCE hInstance) :
 pInstance(hInstance)
 {
     pTheLauncher = this;
+
+    // parse command line
+    int i, nArgs;
+    LPWSTR * const szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+    if(!szArglist){
+        throw std::runtime_error("CommandLineToArgvW failed");
+    }
+    for(i=1; i<nArgs; i++){
+        pLaunchArgs.push_back(szArglist[i]);
+    }
+    LocalFree(szArglist);
 }
 
 Launcher::~Launcher(){
@@ -88,6 +101,28 @@ std::string Launcher::ToString(const std::wstring& string){
     return cstring;
 }
 
+std::wstring Launcher::UrlEncode(const std::wstring& string){
+    std::wstringstream escaped;
+    escaped.fill('0');
+    escaped << std::hex;
+
+    std::wstring::const_iterator iter;
+    for(iter = string.cbegin(); iter != string.cend(); iter++){
+        const std::wstring::value_type c = *iter;
+
+        if(isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~'){
+            escaped << c;
+            
+        }else{
+            escaped << std::uppercase;
+            escaped << '%' << std::setw(2) << (int)c;
+            escaped << std::nouppercase;
+        }
+    }
+
+    return escaped.str();
+}
+
 int Launcher::pRunMessageLoop(){
     MSG msg;
     HACCEL hAccelTable = LoadAccelerators(pInstance, MAKEINTRESOURCE(IDC_LAUNCHER));
@@ -114,9 +149,13 @@ void Launcher::pLaunchDelga(){
     options.TreatAsUntrusted(false);
 
     std::wstring uriString{L"delauncher:run?file="};
-    uriString += pLauncherDirectory;
-    uriString += L"\\";
-    uriString += ToWString(pLauncherIni->Get("File"));
+    uriString += UrlEncode(pLauncherDirectory + L"\\" + ToWString(pLauncherIni->Get("File")));
+    
+    std::vector<std::wstring>::const_iterator iterArg;
+    for(iterArg = pLaunchArgs.cbegin(); iterArg != pLaunchArgs.cend(); iterArg++){
+        uriString += L"&argument=";
+        uriString += UrlEncode(*iterArg);
+    }
 
     Uri uri{uriString};
 
@@ -132,8 +171,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 _In_ LPWSTR    lpCmdLine, _In_ int nCmdShow)
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
-    UNREFERENCED_PARAMETER(lpCmdLine);
     UNREFERENCED_PARAMETER(nCmdShow);
+    UNREFERENCED_PARAMETER(lpCmdLine);
 
     try{
         Launcher launcher(hInstance);
