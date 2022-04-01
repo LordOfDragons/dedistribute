@@ -28,6 +28,10 @@
 #include <sstream>
 #include <iomanip>
 #include <shellapi.h>
+#include <iostream>
+#include <string>
+#include <locale>
+#include <codecvt>
 
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.System.h>
@@ -102,20 +106,23 @@ std::string Launcher::ToString(const std::wstring& string){
 }
 
 std::wstring Launcher::UrlEncode(const std::wstring& string){
+    // we have to utf8 encode the result
+    const std::string utf8(ToString(string));
     std::wstringstream escaped;
     escaped.fill('0');
     escaped << std::hex;
 
-    std::wstring::const_iterator iter;
-    for(iter = string.cbegin(); iter != string.cend(); iter++){
-        const std::wstring::value_type c = *iter;
+    std::string::const_iterator iter;
+    for(iter = utf8.cbegin(); iter != utf8.cend(); iter++){
+        const std::string::value_type c = *iter;
 
         if(isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~'){
             escaped << c;
             
         }else{
             escaped << std::uppercase;
-            escaped << '%' << std::setw(2) << (int)c;
+            // do not remove the (unsigned char) cast or the result is wrong for UTF8 characters
+            escaped << '%' << std::setw(2) << (int)(unsigned char)c;
             escaped << std::nouppercase;
         }
     }
