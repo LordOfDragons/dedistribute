@@ -22,6 +22,7 @@
 #include "resource.h"
 #include "Launcher.h"
 #include "WindowSplash.h"
+#include "WindowInstall.h"
 #include "LauncherIni.h"
 
 #include <stdexcept>
@@ -32,6 +33,7 @@
 #include <string>
 #include <locale>
 #include <codecvt>
+#include <chrono>
 
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.System.h>
@@ -44,7 +46,10 @@ using namespace Windows::UI::ViewManagement;
 Launcher *Launcher::pTheLauncher = nullptr;
 
 Launcher::Launcher(HINSTANCE hInstance) :
-pInstance(hInstance)
+pInstance(hInstance),
+pCancelInstall(false),
+pCloseInstall(false),
+hAccelTable(nullptr)
 {
     pTheLauncher = this;
 
@@ -80,6 +85,14 @@ int Launcher::Run(){
 
     pLauncherIni = std::make_unique<LauncherIni>(pLauncherDirectory + L"\\Launcher.ini");
 
+    if(!pIsLaucherInstalled() && !pInstallLauncher()){
+        return 1;
+    }
+
+    if(!pLaunchArgs.empty() && pLaunchArgs[0] == L"--install-only"){
+        return 0;
+    }
+
     pLaunchDelga();
     
     // just long enough for the dialog to show then we can close. if we close
@@ -89,6 +102,18 @@ int Launcher::Run(){
 
     return 0;
     //return pRunMessageLoop();
+}
+
+void Launcher::CancelInstall(){
+    pCancelInstall = true;
+}
+
+void Launcher::RequestInstall(){
+    pRequestInstallLauncher();
+}
+
+void Launcher::CloseInstall(){
+    pCloseInstall = true;
 }
 
 std::wstring Launcher::ToWString(const std::string& string){
@@ -144,12 +169,37 @@ int Launcher::pRunMessageLoop(){
     return (int)msg.wParam;
 }
 
+void Launcher::pRunMessageLoopOnce(){
+    MSG msg;
+    if(!hAccelTable){
+        hAccelTable = LoadAccelerators(pInstance, MAKEINTRESOURCE(IDC_LAUNCHER));
+    }
+
+    while(PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)){
+        if(!TranslateAccelerator(msg.hwnd, hAccelTable, &msg)){
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+    }
+}
+
 void Launcher::pExitApplication(){
     PostQuitMessage(0);
 }
 
 void Launcher::pLaunchDelga(){
     Windows::System::LauncherOptions options;
+
+    //const auto init = options.as<IInitializeWithWindow>();
+    //winrt::check_hresult(init->Initialize(hWnd));
+
+    // quite the mess here. if the application is not installed setting TargetApplicationPackageFamilyName
+    // causes the popup window to not show the preferred application to install which is bad.
+    // if LaunchUriForResultAsync() is used not using TargetApplicationPackageFamilyName causes
+    // exception to be thrown and launching does not work. the launcher can though not run anyways
+    // because it can not react to activation events (not a winrt application)
+    
+    //options.TargetApplicationPackageFamilyName(L"DragonDreams.Dragengine.GameEngine_14hw6vre8sh8m");
     options.PreferredApplicationPackageFamilyName(L"DragonDreams.Dragengine.GameEngine_14hw6vre8sh8m");
     options.PreferredApplicationDisplayName(L"Drag[en]gine Game Engine");
     options.DesiredRemainingView(ViewSizePreference::UseNone);
@@ -166,10 +216,89 @@ void Launcher::pLaunchDelga(){
 
     Uri uri{uriString};
 
-    if(Windows::System::Launcher::LaunchUriAsync(uri, options).get()){
+    
+    const bool result = Windows::System::Launcher::LaunchUriAsync(uri, options).get();
+    if(result){
 
     }else{
         throw std::runtime_error("Failed launching DELGA");
+    }
+    
+    /*
+    const Windows::System::LaunchUriResult result =
+        Windows::System::Launcher::LaunchUriForResultsAsync(uri, options).get();
+
+    {
+    std::wstringstream sstr;
+    sstr << L"LaunchUriStatus: ";
+    sstr << (int)result.Status();
+    OutputDebugString(sstr.str().c_str());
+    }
+
+    if(result){
+
+    }else{
+        throw std::runtime_error("Failed launching DELGA");
+    }
+    */
+}
+
+bool Launcher::pIsLaucherInstalled(){
+    // QueryAppUriSupportAsync does not seem to work
+    const Windows::System::LaunchQuerySupportStatus result =
+        Windows::System::Launcher::QueryUriSupportAsync(Uri(L"delauncher:"),
+            Windows::System::LaunchQuerySupportType::Uri).get();
+
+    return result == Windows::System::LaunchQuerySupportStatus::Available;
+}
+
+bool Launcher::pInstallLauncher(){
+    std::unique_ptr<WindowInstall> window = std::make_unique<WindowInstall>();
+    window->Show();
+
+    pRequestInstallLauncher();
+
+    auto startTime = std::chrono::high_resolution_clock::now();
+    const std::chrono::seconds intervalCheck(1);
+
+    while(!pCancelInstall){
+        pRunMessageLoopOnce();
+
+        const auto curTime = std::chrono::high_resolution_clock::now();
+        if((curTime - startTime) < intervalCheck){
+            continue;
+        }
+
+        if(pIsLaucherInstalled()){
+            //OutputDebugString(L"Launcher installed.\n");
+            break;
+        }
+        //OutputDebugString(L"Launcher not installed. Sleeping.\n");
+        startTime = curTime;
+    }
+
+    if(pCancelInstall){
+        return false;
+    }
+
+    window->InstallationDone();
+
+    while(!pCloseInstall){
+        pRunMessageLoopOnce();
+    }
+
+    return true;
+}
+
+void Launcher::pRequestInstallLauncher(){
+    Windows::System::LauncherOptions options;
+    options.PreferredApplicationPackageFamilyName(L"DragonDreams.Dragengine.GameEngine_14hw6vre8sh8m");
+    options.PreferredApplicationDisplayName(L"Drag[en]gine Game Engine");
+    options.DesiredRemainingView(ViewSizePreference::UseNone);
+    options.TreatAsUntrusted(false);
+
+    if(!Windows::System::Launcher::LaunchUriAsync(Uri(L"delauncher:ready"), options).get()){
+        throw std::runtime_error("Failed launching launcher installation");
     }
 }
 
@@ -180,6 +309,8 @@ _In_ LPWSTR    lpCmdLine, _In_ int nCmdShow)
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(nCmdShow);
     UNREFERENCED_PARAMETER(lpCmdLine);
+
+    winrt::init_apartment();
 
     try{
         Launcher launcher(hInstance);
@@ -192,3 +323,4 @@ _In_ LPWSTR    lpCmdLine, _In_ int nCmdShow)
         return -1;
     }
 }
+

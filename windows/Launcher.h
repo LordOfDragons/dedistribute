@@ -38,6 +38,10 @@ private:
 	std::unique_ptr<LauncherIni> pLauncherIni;
 	std::vector<std::wstring> pLaunchArgs;
 
+	HACCEL hAccelTable;
+	bool pCancelInstall;
+	bool pCloseInstall;
+
 	static Launcher *pTheLauncher;
 
 public:
@@ -49,6 +53,15 @@ public:
 
 	/** Run. */
 	int Run();
+
+	/** Cancel install. */
+	void CancelInstall();
+
+	/** Request install. */
+	void RequestInstall();
+
+	/** Close install. */
+	void CloseInstall();
 
 	/** App. */
 	static inline Launcher &Get(){ return *pTheLauncher; };
@@ -67,6 +80,10 @@ public:
 
 private:
 	int pRunMessageLoop();
+	void pRunMessageLoopOnce();
 	void pExitApplication();
 	void pLaunchDelga();
+	bool pIsLaucherInstalled();
+	bool pInstallLauncher();
+	void pRequestInstallLauncher();
 };

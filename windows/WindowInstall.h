@@ -23,22 +23,40 @@
 
 #include "framework.h"
 
-/** Splash window. */
-class WindowSplash{
+/** Install window. */
+class WindowInstall{
 private:
 	ATOM pWindowClass;
 	HWND pWindow;
+	HWND pButtonInstall;
+	HWND pButtonCancel;
+	HICON pIconDragengine;
+	bool pDoneInstall;
 
 	static const wchar_t *WindowClassName;
 
+
 public:
 	/** Create splash window. */
-	WindowSplash();
+	WindowInstall();
 
 	/** Clean up splash window. */
-	~WindowSplash();
+	~WindowInstall();
+
+	/** Show window. */
+	void Show();
+
+	/** Icon. */
+	inline HICON GetIconDragengine() const{return pIconDragengine;}
+
+	/** Installation done. */
+	void InstallationDone();
+
+	/** Installation done. */
+	inline bool IsDoneInstall() const{return pDoneInstall;}
 
 private:
 	void RegisterWindowClass();
-	void CreateSplashWindow();
+	void CreateInstallWindow();
+	void CenterWindow();
 };
