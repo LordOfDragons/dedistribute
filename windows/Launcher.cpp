@@ -88,11 +88,22 @@ int Launcher::Run(){
     if(!pIsLaucherInstalled() && !pInstallLauncher()){
         return 1;
     }
+    
+    std::vector<std::wstring>::iterator argEnd;
+    for(argEnd = pLaunchArgs.begin(); argEnd != pLaunchArgs.end(); argEnd++){
+        if(*argEnd == L"--"){
+            break;
+        }
+    }
 
-    if(!pLaunchArgs.empty() && pLaunchArgs[0] == L"--install-only"){
+    if(std::find(pLaunchArgs.begin(), argEnd, L"--install-only") != argEnd){
         return 0;
     }
 
+    if(argEnd != pLaunchArgs.cend()){
+        pLaunchArgs.erase(pLaunchArgs.begin(), argEnd + 1);
+    }
+    
     pLaunchDelga();
     
     // just long enough for the dialog to show then we can close. if we close
