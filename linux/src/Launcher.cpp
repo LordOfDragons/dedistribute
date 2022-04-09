@@ -188,6 +188,7 @@ void Launcher::pInstallEngine(){
 	// try gnome-terminal (ubuntu)
 	String cmdline("gnome-terminal -x bash -c \"");
 	cmdline += pLauncherDirectory + pFilenameInstaller;
+	cmdline += " --yes";
 	cmdline += '"';
 	
 	if(!system(cmdline.Pointer())){
@@ -197,6 +198,7 @@ void Launcher::pInstallEngine(){
 	// try xterm
 	cmdline = "xterm -e \"";
 	cmdline += pLauncherDirectory + pFilenameInstaller;
+	cmdline += " --yes";
 	cmdline += '"';
 	
 	if(!system(cmdline.Pointer())){

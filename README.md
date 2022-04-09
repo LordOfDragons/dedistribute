@@ -24,13 +24,18 @@ structure should look like this:
   - Launcher.ini  (all platforms)
   - MyGame.delga  (all platforms)
   - Launcher64.exe  (windows only)
-  - install_dragengine.sh  (linux only)
+  - install-dragengine-VERSION-linux64.sh  (linux only)
   - launcher64  (linux only)
 
 Edit Launcher.ini and change the "File=" value to match your *.delga file.
 Optionally you can put your *.delga file (and patches) into a subdirectory.
 In this case enter the *.delga path relative to the Launcher.ini file
 using "/" as path separator.
+
+To support Linux systems download the latest Linux Drag[en]gine installer from
+https://dragondreams.ch/?page_id=152#downloads-dragengine and place it into
+the directory. Filename is __install-dragengine-VERSION-linux64.sh__ where
+VERSION is the game engine version required by the game.
 
 The content of the "Content" directory can now be uploaded to the distribution
 platform. If you want to support only one platform you can delete all files
