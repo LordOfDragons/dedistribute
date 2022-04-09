@@ -30,6 +30,7 @@ private:
 	String pLauncherDirectory;
 	LauncherIni *pLauncherIni;
 	String pLaunchArgs;
+	String pFilenameInstaller;
 	
 public:
 	Launcher(int argc, char **argv);
@@ -37,5 +38,11 @@ public:
 	int Run();
 	
 private:
+	void pFindInstaller();
+	String pGetInstallerEngineVersion();
+	String pGetInstalledEngineVersion();
+	bool pCompareEngineVersion(const String &a, const String &b);
+	bool pSystemCanLaunchDelga();
+	void pInstallEngine();
 	void pLaunchDelga();
 };

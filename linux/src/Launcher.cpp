@@ -23,6 +23,8 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <dirent.h>
 
 #include "Launcher.h"
 #include "LauncherIni.h"
@@ -60,69 +62,178 @@ int Launcher::Run(){
 	
 	pLauncherIni = new LauncherIni(pLauncherDirectory + "Launcher.ini");
 	
+	pFindInstaller();
 	pLaunchDelga();
 	return 0;
 }
 
-void Launcher::pLaunchDelga(){
+void Launcher::pFindInstaller(){
+	DIR * const dir = opendir(pLauncherDirectory.Pointer());
+	if(!dir){
+		throw Exception("Failed scanning working directory");
+	}
+	
+	while(true){
+		struct dirent * const ent = readdir(dir);
+		if(!ent){
+			break;
+		}
+		
+		if(strlen(ent->d_name) > 30
+		&& strncmp(ent->d_name, "install-dragengine-", 19) == 0
+		&& strcmp(ent->d_name + strlen(ent->d_name) - 11, "-linux64.sh") == 0){
+			pFilenameInstaller = ent->d_name;
+			closedir(dir);
+			return;
+		}
+	}
+	
+	closedir(dir);
+	throw Exception("Failed finding dragengine installer");
+}
+
+String Launcher::pGetInstallerEngineVersion(){
+	return pFilenameInstaller.SubString(19, pFilenameInstaller.Length() - 11);
+}
+
+String Launcher::pGetInstalledEngineVersion(){
+	FILE * const cmdline = popen("delauncher --version", "r");
+	if(!cmdline){
+		return String();
+	}
+	
+	char buffer[16];
+	if(fgets(buffer, sizeof(buffer), cmdline)){
+		char drain[8];
+		while(fgets(drain, sizeof(drain), cmdline));
+	}
+	
+	pclose(cmdline);
+	
+	return String(buffer);
+}
+
+bool Launcher::pCompareEngineVersion(const String &a, const String &b){
+	const char *ptrA = a.Pointer();
+	const char *ptrB = b.Pointer();
+	
+	while(*ptrA || *ptrB){
+		char *deliA = nullptr;
+		char *deliB = nullptr;
+		
+		const int numberA = (int)strtol(ptrA, &deliA, 10);
+		const int numberB = (int)strtol(ptrB, &deliB, 10);
+		
+		if(!deliA || (*deliA && *deliA != '.')){ // not '.' or 0-terminator
+			String message("Invalid engine version '");
+			message += a;
+			message += "'";
+			throw Exception(message);
+		}
+		
+		if(!deliB || (*deliB && *deliB != '.')){ // not '.' or 0-terminator
+			String message("Invalid engine version '");
+			message += b;
+			message += "'";
+			throw Exception(message);
+		}
+		
+		if(numberA < numberB){
+			return -1;
+			
+		}else if(numberA > numberB){
+			return 1;
+		}
+		
+		ptrA = deliA;
+		if(*deliA){
+			ptrA++;
+		}
+		
+		ptrB = deliB;
+		if(*deliB){
+			ptrB++;
+		}
+	}
+	
+	return 0;
+}
+
+bool Launcher::pSystemCanLaunchDelga(){
 	// check if system knows how to launch delga files. we are using this extra
 	// check instead of just calling xdg-open and checking the return value because
 	// xdg-open can block the process with a user-question because it detects the
 	// delga file to launch to be a binary (albeit not an executable one). to avoid
 	// potential stalling problems the query solution is used. less elegant but
 	// the result will certainly never stall the process
-	FILE *cmdcheck = popen("xdg-mime query default application/dragengine-delga", "r");
+	
+	FILE * const cmdline = popen("xdg-mime query default application/dragengine-delga", "r");
+	if(!cmdline){
+		return false;
+	}
+	
 	int count = 0;
 	char buffer[8];
-	while(fgets(buffer, sizeof(buffer), cmdcheck)){
+	while(fgets(buffer, sizeof(buffer), cmdline)){
 		count++;
 	}
-	pclose(cmdcheck);
+	pclose(cmdline);
 	
-	// install the game engine if absent
-	if(count == 0){
-		// try gnome-terminal (ubuntu)
-		String cmdline("gnome-terminal -x bash -c \"");
-		cmdline += pLauncherDirectory + "install_dragengine.sh";
-		cmdline += '"';
-		
-		int result = system(cmdline.Pointer());
-		if(result){
-			// try xterm
-			cmdline = "xterm -e \"";
-			cmdline += pLauncherDirectory + "install_dragengine.sh";
-			cmdline += '"';
-			
-			result = system(cmdline.Pointer());
-		}
-		
-		if(result){
-			throw Exception("No terminal found to run installer");
-		}
-		
-		//if(system(pLauncherDirectory + "install_dragengine.sh") != 0){
-		/*
-		String cmdline("gnome-terminal -x sh -c \"");
-		cmdline += pLauncherDirectory + "install_dragengine.sh";
-		cmdline += '"';
-		*/
-// 		if(system(cmdline.Pointer()) != 0){
-			// user abort installation or installation failed. an error
-			// has been already shown so gracefully exit the launcher
-// 			return;
-// 		}
+	return count > 0;
+}
+
+void Launcher::pInstallEngine(){
+	printf("Install game engine using installer: %s\n", pFilenameInstaller.Pointer());
+	
+	// try gnome-terminal (ubuntu)
+	String cmdline("gnome-terminal -x bash -c \"");
+	cmdline += pLauncherDirectory + pFilenameInstaller;
+	cmdline += '"';
+	
+	if(!system(cmdline.Pointer())){
+		return;
+	}
+	
+	// try xterm
+	cmdline = "xterm -e \"";
+	cmdline += pLauncherDirectory + pFilenameInstaller;
+	cmdline += '"';
+	
+	if(!system(cmdline.Pointer())){
+		return;
+	}
+	
+	// we found no terminal we know to install the game engine
+	throw Exception("No terminal found to run installer");
+	
+	//if(system(pLauncherDirectory + pFilenameInstaller) != 0){
+	/*
+	String cmdline("gnome-terminal -x sh -c \"");
+	cmdline += pLauncherDirectory + pFilenameInstaller;
+	cmdline += '"';
+	*/
+// 	if(system(cmdline.Pointer()) != 0){
+	// user abort installation or installation failed. an error
+	// has been already shown so gracefully exit the launcher
+// 		return;
+// 	}
+}
+
+void Launcher::pLaunchDelga(){
+	// install the game engine if game engine is not installed (version=0) or not newer
+	const String requiredVersion(pGetInstallerEngineVersion());
+	const String installedVersion(pGetInstalledEngineVersion());
+	
+	printf("Required game engine version: %s\n", requiredVersion.Pointer());
+	printf("Installed game engine version: %s\n", installedVersion.Pointer());
+	
+	if(pCompareEngineVersion(requiredVersion, installedVersion) > 0){
+		pInstallEngine();
 	}
 	
 	// check again if system knows how to launch delga files. this should
 	// return success otherwise installer failed or user aborted it
-	cmdcheck = popen("xdg-mime query default application/dragengine-delga", "r");
-	count = 0;
-	while(fgets(buffer, sizeof(buffer), cmdcheck)){
-		count++;
-	}
-	pclose(cmdcheck);
-	
-	if(count == 0){
+	if(!pSystemCanLaunchDelga()){
 // 		throw Exception("Drag[en]gine installation not working (launch broken)");
 		return;
 	}
@@ -139,22 +250,26 @@ void Launcher::pLaunchDelga(){
 	// where <options> can be:
 	//   
 	//   --profile=profile
+	const String pathDelga(pLauncherIni->Get("File"));
 	String cmdline;
+	
+	printf("Launch: %s\n", pathDelga.Pointer());
 	
 	if(pLaunchArgs.Length() > 0){
 		cmdline = "delauncher-gui \"";
-		cmdline += pLauncherDirectory + pLauncherIni->Get("File");
+		cmdline += pLauncherDirectory + pathDelga;
 		cmdline += "\" ";
 		cmdline += pLaunchArgs;
 		
 	}else{
 		cmdline = "xdg-open \"";
-		cmdline += pLauncherDirectory + pLauncherIni->Get("File");
+		cmdline += pLauncherDirectory + pathDelga;
 		cmdline += '"';
 	}
 	
 	if(system(cmdline) != 0){
-		throw Exception("Failed launching.");
+		// no exception throwing since this can also happen if user uses CTRL+C
+		//throw Exception("Failed launching.");
 	}
 }
 
