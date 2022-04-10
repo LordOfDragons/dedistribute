@@ -103,6 +103,7 @@ String Launcher::pGetInstalledEngineVersion(){
 	}
 	
 	char buffer[16];
+	memset(buffer, 0, sizeof(buffer));
 	if(fgets(buffer, sizeof(buffer), cmdline)){
 		char drain[8];
 		while(fgets(drain, sizeof(drain), cmdline));
@@ -184,41 +185,76 @@ bool Launcher::pSystemCanLaunchDelga(){
 
 void Launcher::pInstallEngine(){
 	printf("Install game engine using installer: %s\n", pFilenameInstaller.Pointer());
+	int returnValue;
 	
 	// try gnome-terminal (ubuntu)
-	String cmdline("gnome-terminal -x bash -c \"");
+	printf("Trying gnome-terminal\n");
+	String cmdline("gnome-terminal --wait -- bash -c \"");
 	cmdline += pLauncherDirectory + pFilenameInstaller;
 	cmdline += " --yes";
 	cmdline += '"';
 	
-	if(!system(cmdline.Pointer())){
-		return;
+	returnValue = system(cmdline.Pointer());
+	if(WIFEXITED(returnValue)){
+		printf("Installation Exit Status: %d\n", WEXITSTATUS(returnValue));
+		
+		switch(WEXITSTATUS(returnValue)){
+		case 0:
+			return;
+			
+		case 1: // installer
+		case 130: // bash: ctrl+c
+			throw Exception("Installation cancelled");
+			
+		case 127: // bash: command not found
+			break;
+			
+		default:
+			throw Exception("Installation failed");
+		}
+		
+	}else if(WIFSIGNALED(returnValue)){
+		throw Exception("Installation cancelled");
+		
+	}else{
+		// otherwise command not found
 	}
 	
 	// try xterm
+	printf("Trying xterm\n");
 	cmdline = "xterm -e \"";
 	cmdline += pLauncherDirectory + pFilenameInstaller;
 	cmdline += " --yes";
 	cmdline += '"';
 	
-	if(!system(cmdline.Pointer())){
-		return;
+	returnValue = system(cmdline.Pointer());
+	if(WIFEXITED(returnValue)){
+		printf("Installation Exit Status: %d\n", WEXITSTATUS(returnValue));
+		
+		switch(WEXITSTATUS(returnValue)){
+		case 0:
+			return;
+			
+		case 1: // installer
+		case 130: // bash: ctrl+c
+			throw Exception("Installation cancelled");
+			
+		case 127: // bash: command not found
+			break;
+			
+		default:
+			throw Exception("Installation failed");
+		}
+		
+	}else if(WIFSIGNALED(returnValue)){
+		throw Exception("Installation cancelled");
+		
+	}else{
+		// otherwise command not found
 	}
 	
 	// we found no terminal we know to install the game engine
 	throw Exception("No terminal found to run installer");
-	
-	//if(system(pLauncherDirectory + pFilenameInstaller) != 0){
-	/*
-	String cmdline("gnome-terminal -x sh -c \"");
-	cmdline += pLauncherDirectory + pFilenameInstaller;
-	cmdline += '"';
-	*/
-// 	if(system(cmdline.Pointer()) != 0){
-	// user abort installation or installation failed. an error
-	// has been already shown so gracefully exit the launcher
-// 		return;
-// 	}
 }
 
 void Launcher::pLaunchDelga(){
@@ -235,10 +271,12 @@ void Launcher::pLaunchDelga(){
 	
 	// check again if system knows how to launch delga files. this should
 	// return success otherwise installer failed or user aborted it
-	if(!pSystemCanLaunchDelga()){
-// 		throw Exception("Drag[en]gine installation not working (launch broken)");
-		return;
-	}
+	//
+	// NOTE Ubunut seems to sometimes act up installing mime-types failing to launch
+	//      the game engine albeit
+// 	if(!pSystemCanLaunchDelga()){
+// 		return;
+// 	}
 	
 	// launch delga file. this should work now.
 	// 
@@ -254,24 +292,51 @@ void Launcher::pLaunchDelga(){
 	//   --profile=profile
 	const String pathDelga(pLauncherIni->Get("File"));
 	String cmdline;
+	int returnValue;
 	
 	printf("Launch: %s\n", pathDelga.Pointer());
 	
-	if(pLaunchArgs.Length() > 0){
-		cmdline = "delauncher-gui \"";
-		cmdline += pLauncherDirectory + pathDelga;
-		cmdline += "\" ";
-		cmdline += pLaunchArgs;
-		
-	}else{
+	/*
+	if(pLaunchArgs.Length() == 0){
 		cmdline = "xdg-open \"";
 		cmdline += pLauncherDirectory + pathDelga;
 		cmdline += '"';
+		
+		exitCode = system(cmdline);
+		switch( exitCode ){
+		case 0: // success
+		case 130: // bash control+c
+			return;
+			
+		default:
+			break;
+		}
+		
+		// someting went wrong. try using delauncher-gui directly
 	}
+	*/
 	
-	if(system(cmdline) != 0){
-		// no exception throwing since this can also happen if user uses CTRL+C
-		//throw Exception("Failed launching.");
+	cmdline = "delauncher-gui \"";
+	cmdline += pLauncherDirectory + pathDelga;
+	cmdline += "\" ";
+	cmdline += pLaunchArgs;
+	
+	returnValue = system(cmdline);
+	if(WIFEXITED(returnValue)){
+		switch(WEXITSTATUS(returnValue)){
+		case 0: // success
+		case 130: // bash: ctrl+c
+			return;
+			
+		default:
+			throw Exception("Failed launching");
+		}
+		
+	}else if(WIFSIGNALED(returnValue)){
+		// most probably ctrl+c
+		
+	}else{
+		throw Exception("Failed launching");
 	}
 }
 
