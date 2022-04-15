@@ -1,0 +1,17 @@
+"InstallScript"
+{
+	"Run Process"
+	{
+		"Drag[en]gine 64-Bit"
+		{
+			"HasRunKey" "HKEY_LOCAL_MACHINE\\Software\\Valve\\Steam\\Apps\\CommonRedist\\Drag[en]gine\\{VERSION}"
+			"process 1" "%INSTALLDIR%\\install-dragengine-{VERSION}-windows64.exe"
+			"command 1" "/verysilent"
+			"NoCleanUp" "1"
+			"Requirement_OS"
+			{
+				"Is64BitWindows" "1"
+			}
+		}
+	}
+}

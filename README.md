@@ -14,37 +14,48 @@ themselves.
 
 # Usage
 To get your *.delga file ready for distribution on Steam and similar platforms
-download the latest Drag[en]gine Distribution Release files. Unpack the files
-into a new directory, for example "Content".
+unpack the files into a new directory, for example "Content".
 
-Now copy your *.delga file next to the Launcher.ini file. The directory
-structure should look like this:
+Choose the distribution platform to use. For Microsoft App Store use the
+directory "microsoft_appstore". For SteamWorks use the directory "steamworks".
 
+Copy your *.delga file next to the Launcher.ini file of your chosen platform.
+The directory structure should look like this:
+
+For Microsoft App Store:
+- Content/VFS/ProgramFilesX64/MyGame
+  - Launcher.ini
+  - MyGame.delga
+  - Launcher64.exe
+
+For SteamWorks:
 - Content
-  - Launcher.ini  (all platforms)
-  - MyGame.delga  (all platforms)
+  - Launcher.ini
+  - MyGame.delga
   - Launcher64.exe  (windows only)
-  - install-dragengine-VERSION-linux64.sh  (linux only)
+  - install-dragengine-{VERSION}-windows64.exe  (windows only)
+  - installscript-dragengine-{VERSION}.vdf  (windows only)
   - launcher64  (linux only)
+  - install-dragengine-{VERSION}-linux64.sh  (linux only)
 
 Edit Launcher.ini and change the "File=" value to match your *.delga file.
 Optionally you can put your *.delga file (and patches) into a subdirectory.
 In this case enter the *.delga path relative to the Launcher.ini file
 using "/" as path separator.
 
-To support Linux systems download the latest Linux Drag[en]gine installer from
-https://dragondreams.ch/?page_id=152#downloads-dragengine and place it into
-the directory. Filename is __install-dragengine-VERSION-linux64.sh__ where
-VERSION is the game engine version required by the game.
+For Microsoft App Store Use content of "Content" directory as input for building
+your MSIX upload file together with necessary files like manifest and icons.
 
-The content of the "Content" directory can now be uploaded to the distribution
-platform. If you want to support only one platform you can delete all files
-except those marked "all platforms" or marked with your platform of choice.
+For SteamWorks upload the content of the "Content" directory. If you want to
+support only one platform you can delete all files marked for this platform.
 
 In the distribution platform enter the executable name of the matching
 platform without any arguments:
 - Windows use "Launcher64.exe"
 - Linux use "launcher64"
+
+For Windows add the "installscript-dragengine-{VERSION}.vdf" as install
+script. If the user does not have the game engine it will be silently installed.
 
 For Linux make sure the files "launcher64" and "install_dragengine.sh" have
 the executable bit set after uploading or your game will not run.
@@ -55,8 +66,11 @@ is installed on the user system.
 
 If the game engine is not installed on the system it is installed using the
 platform specific way:
-- Windows: Redirects the user to the Drag[en]gine App Store page. He can
-  then install the package for free.
+- Windows:
+  - Microsoft App Store: Redirects the user to the Drag[en]gine App Store page.
+    He can then install the package for free.
+  - SteamWorks: Silently installs the game engine using the included
+    install-dragengine-{VERSION}-windows64.exe
 - Linux: Opens a terminal window with the installer script. The user has
   to enter the super user password to allow the installation to carry on.
 
