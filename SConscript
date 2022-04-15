@@ -10,12 +10,14 @@ print('Latest Drag[en]gine Release Version: {}'.format(engineVersion))
 
 distribution = []
 
-distribution.extend(env.Install('distribution/content/microsoft_appstore', 'windows/build/Launcher64.exe'))
-distribution.extend(env.Install('distribution/content/microsoft_appstore', 'data/Launcher.ini'))
+pathMSStore = 'distribution/content/microsoft_appstore/VFS/ProgramFilesX64/MyGame'
+distribution.extend(env.Install(pathMSStore, 'windows/build/Launcher64.exe'))
+distribution.extend(env.Install(pathMSStore, 'data/Launcher.ini'))
 
-distribution.extend(env.Install('distribution/content/steamworks', 'windows_direct/build/Launcher64.exe'))
-distribution.extend(env.Install('distribution/content/steamworks', 'linux/build/launcher64'))
-distribution.extend(env.Install('distribution/content/steamworks', 'data/Launcher.ini'))
+pathSteamWorks = 'distribution/content/steamworks'
+distribution.extend(env.Install(pathSteamWorks, 'windows_direct/build/Launcher64.exe'))
+distribution.extend(env.Install(pathSteamWorks, 'linux/build/launcher64'))
+distribution.extend(env.Install(pathSteamWorks, 'data/Launcher.ini'))
 
 def downloadFile(env, target, source):
 	path = target[0].abspath
@@ -46,20 +48,20 @@ def createZipFile(env, target, source):
 	shutil.make_archive(target[0].abspath, 'zip', source[0].abspath)
 
 distribution.extend(env.Command(
-	'distribution/content/steamworks/install-dragengine-{}-windows64.exe'.format(engineVersion),
+	'{}/install-dragengine-{}-windows64.exe'.format(pathSteamWorks, engineVersion),
 	'data/Launcher.ini',
 	env.Action(downloadFile, 'Download Windows Installer'),
 	URL='{0}/download/v{1}/install-dragengine-{1}-windows64.exe'.format(baseUrl, engineVersion)))
 
 distribution.extend(env.Command(
-	'distribution/content/steamworks/install-dragengine-{}-linux64.sh'.format(engineVersion),
+	'{}/install-dragengine-{}-linux64.sh'.format(pathSteamWorks, engineVersion),
 	'data/Launcher.ini',
 	env.Action(downloadFile, 'Download Linux Installer'),
 	URL='{0}/download/v{1}/install-dragengine-{1}-linux64.sh'.format(baseUrl, engineVersion),
 	SET_EXECUTABLE_BIT=True))
 
 distribution.extend(env.Command(
-	'distribution/content/steamworks/installscript-dragengine-{}.vdf'.format(engineVersion),
+	'{}/installscript-dragengine-{}.vdf'.format(pathSteamWorks, engineVersion),
 	'data/installscript-dragengine.vdf',
 	env.Action(copyWindowsInstallerScript, 'SteamWorks Windows Install Script')))
 
