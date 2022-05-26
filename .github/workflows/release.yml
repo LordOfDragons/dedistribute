@@ -24,3 +24,48 @@ jobs:
     uses: ./.github/workflows/build_windows_direct.yml
     with:
       artifactArchive: archives-windows-direct
+
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          lfs: true
+          submodules: 'recursive'
+      
+      - name: Get Linux Archives
+        uses: actions/download-artifact@v3
+        with:
+          name: archives-linux
+          path: linux/build
+      
+      - name: Get Windows Archives
+        uses: actions/download-artifact@v3
+        with:
+          name: archives-windows
+          path: windows/build
+      
+      - name: Get Windows Direct Archives
+        uses: actions/download-artifact@v3
+        with:
+          name: archives-windows-direct
+          path: windows_direct/build
+      
+      - name: Build
+        run: scons version=${{ github.event.inputs.version }}
+      
+      - name: Upload Artifacts
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: false
+          artifactErrorsFailBuild: true
+          draft: false
+          prerelease: false
+          commit: 'master'
+          tag: 'v${{ github.event.inputs.version }}'
+          name: 'Distribute DELGA ${{ github.event.inputs.version }}'
+          body: |
+            Distribute DELGA files for projects based on Drag[en]gine Version ${{ github.event.inputs.version }} . See included README.md on instructions on how to use the distribution files.
+          artifacts: distribution/distribute-delga-${{ github.event.inputs.version }}.zip
