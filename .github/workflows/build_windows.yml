@@ -19,11 +19,11 @@ jobs:
         
       - name: Restore NuGet packages
         working-directory: ${{env.GITHUB_WORKSPACE}}/windows
-        run: nuget restore windows\\Launcher.sln
+        run: nuget restore windows\Launcher.sln
         
       - name: Build
         working-directory: ${{env.GITHUB_WORKSPACE}}/windows
-        run: msbuild /m /p:Configuration=Release windows\\Launcher.sln
+        run: msbuild /m /p:Configuration=Release windows\Launcher.sln
       
       - name: Store Archives
         uses: actions/upload-artifact@v3
