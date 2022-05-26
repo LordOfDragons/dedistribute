@@ -8,6 +8,9 @@ baseUrl = 'https://github.com/lordofdragons/dragengine/releases'
 #engineVersion = requests.get('{}/latest'.format(baseUrl)).url.split('/')[-1][1:]
 #print('Latest Drag[en]gine Release Version: {}'.format(engineVersion))
 
+def StringVariable(key, help, default=''):
+	return (key, '%s (string)' % help, default)
+
 params = Variables(['custom.py']) 
 params.Add(StringVariable('version', 'Version', '9999'))
 params.Update(env)

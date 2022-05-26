@@ -1,6 +1,8 @@
 name: Release
 
 on:
+  repository_dispatch:
+    types: [release-build]
   workflow_dispatch:
     inputs:
       version:
