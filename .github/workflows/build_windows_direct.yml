@@ -1,4 +1,4 @@
-name: Build Windows
+name: Build Windows Direct
 
 on:
   workflow_call:
@@ -22,16 +22,16 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.2
         
       - name: Restore NuGet packages
-        working-directory: windows
-        run: nuget restore Launcher.sln
+        working-directory: windows_direct
+        run: nuget restore windows_direct.sln
         
       - name: Build
-        working-directory: windows
-        run: msbuild /m /p:Configuration=Release Launcher.sln
+        working-directory: windows_direct
+        run: msbuild /m /p:Configuration=Release windows_direct.sln
       
       - name: Store Archives
         uses: actions/upload-artifact@v3
         with:
           name: ${{ inputs.artifactArchive }}
-          path: windows/x64/Release/Launcher64.exe
+          path: windows_direct/x64/Release/Launcher64.exe
           if-no-files-found: error

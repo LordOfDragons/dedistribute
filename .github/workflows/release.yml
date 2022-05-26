@@ -1,0 +1,26 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version'
+        required: true
+        type: string
+        default: 'X.Y{.Z}'
+
+jobs:
+  build_linux:
+    uses: ./.github/workflows/build_linux.yml
+    with:
+      artifactArchive: archives-linux
+    
+  build_windows:
+    uses: ./.github/workflows/build_windows.yml
+    with:
+      artifactArchive: archives-windows
+    
+  build_windows_direct:
+    uses: ./.github/workflows/build_windows_direct.yml
+    with:
+      artifactArchive: archives-windows-direct

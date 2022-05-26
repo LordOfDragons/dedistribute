@@ -2,6 +2,10 @@ name: Build Linux
 
 on:
   workflow_call:
+    inputs:
+      artifactArchive:
+        required: true
+        type: string
   workflow_dispatch:
 
 jobs:
@@ -26,7 +30,6 @@ jobs:
       - name: Store Archives
         uses: actions/upload-artifact@v3
         with:
-          name: archive-linux
-          path: |
-            linux/build/launcher64
+          name: ${{ inputs.artifactArchive }}
+          path: linux/build/launcher64
           if-no-files-found: error
