@@ -1,0 +1,34 @@
+name: Build Linux
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          lfs: true
+          submodules: 'recursive'
+      
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.2
+        
+      - name: Restore NuGet packages
+        working-directory: ${{env.GITHUB_WORKSPACE}}/windows
+        run: nuget restore windows/Launcher.sln
+        
+      - name: Build
+        working-directory: ${{env.GITHUB_WORKSPACE}}/windows
+        run: msbuild /m /p:Configuration=Release windows/Launcher.sln
+      
+      - name: Store Archives
+        uses: actions/upload-artifact@v3
+        with:
+          name: archive-windows
+          path: |
+            windows/build/Launcher64.exe
+          if-no-files-found: error
