@@ -35,6 +35,10 @@ jobs:
           lfs: true
           submodules: 'recursive'
       
+      - name: Install required packages
+        run: |
+          sudo apt -y install build-essential scons
+      
       - name: Get Linux Archives
         uses: actions/download-artifact@v3
         with:
