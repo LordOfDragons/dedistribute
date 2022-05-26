@@ -73,4 +73,4 @@ jobs:
           name: 'Distribute DELGA ${{ github.event.inputs.version }}'
           body: |
             Distribute DELGA files for projects based on Drag[en]gine Version ${{ github.event.inputs.version }} . See included README.md on instructions on how to use the distribution files.
-          artifacts: distribution/distribute-delga-${{ github.event.inputs.version }}.zip
+          artifacts: build/distribution/distribute-delga-${{ github.event.inputs.version }}.zip
