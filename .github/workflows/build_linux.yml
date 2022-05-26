@@ -19,7 +19,9 @@ jobs:
           sudo apt -y install build-essential scons
       
       - name: Build
-        run: scons
+        run: |
+          cd linux
+          scons
       
       - name: Store Archives
         uses: actions/upload-artifact@v3
