@@ -68,7 +68,7 @@ jobs:
           artifactErrorsFailBuild: true
           draft: false
           prerelease: false
-          commit: 'master'
+          commit: 'main'
           tag: 'v${{ github.event.inputs.version }}'
           name: 'Distribute DELGA ${{ github.event.inputs.version }}'
           body: |
