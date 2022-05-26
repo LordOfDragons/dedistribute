@@ -18,11 +18,11 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.2
         
       - name: Restore NuGet packages
-        working-directory: ${{env.GITHUB_WORKSPACE}}\\windows
+        working-directory: ${{env.GITHUB_WORKSPACE}}\windows
         run: nuget restore .
         
       - name: Build
-        working-directory: ${{env.GITHUB_WORKSPACE}}\\windows
+        working-directory: ${{env.GITHUB_WORKSPACE}}\windows
         run: msbuild /m /p:Configuration=Release .
       
       - name: Store Archives
