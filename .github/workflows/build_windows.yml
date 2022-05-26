@@ -18,12 +18,12 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.2
         
       - name: Restore NuGet packages
-        working-directory: ${{env.GITHUB_WORKSPACE}}\windows
-        run: nuget restore .
+        working-directory: ${{ env.GITHUB_WORKSPACE }}/windows
+        run: nuget restore Launcher.sln
         
       - name: Build
-        working-directory: ${{env.GITHUB_WORKSPACE}}\windows
-        run: msbuild /m /p:Configuration=Release .
+        working-directory: ${{ env.GITHUB_WORKSPACE }}/windows
+        run: msbuild /m /p:Configuration=Release Launcher.sln
       
       - name: Store Archives
         uses: actions/upload-artifact@v3
