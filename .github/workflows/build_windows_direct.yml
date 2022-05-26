@@ -6,7 +6,6 @@ on:
       artifactArchive:
         required: true
         type: string
-  workflow_dispatch:
 
 jobs:
   build:
