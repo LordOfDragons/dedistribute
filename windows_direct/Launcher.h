@@ -48,15 +48,6 @@ public:
 	/** Run. */
 	int Run();
 
-	/** Cancel install. */
-	void CancelInstall();
-
-	/** Request install. */
-	void RequestInstall();
-
-	/** Close install. */
-	void CloseInstall();
-
 	/** App. */
 	static inline Launcher &Get(){ return *pTheLauncher; };
 
@@ -68,6 +59,9 @@ public:
 
 	/** WString to String. */
 	static std::string ToString(const std::wstring &string);
+
+	/** Command lines to string. */
+	static std::wstring ArgsToCmdline(const std::vector<std::wstring> &args);
 
 private:
 	void pLaunchDelga();

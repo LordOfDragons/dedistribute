@@ -73,7 +73,7 @@ int Launcher::Run(){
         }
     }
 
-    if(argEnd != pLaunchArgs.cend()){
+    if(argEnd != pLaunchArgs.end()){
         pLaunchArgs.erase(pLaunchArgs.begin(), argEnd + 1);
     }
     
@@ -96,27 +96,117 @@ std::string Launcher::ToString(const std::wstring& string){
     return cstring;
 }
 
-void Launcher::pLaunchDelga(){
-    const std::wstring path(pLauncherDirectory + L"\\" + ToWString(pLauncherIni->Get("File")));
+std::wstring Launcher::ArgsToCmdline(const std::vector<std::wstring>& args){
+    std::vector<std::wstring>::const_iterator iter;
+    std::wstring cmdline;
 
-    SHELLEXECUTEINFO sei = {0};
-    sei.cbSize = sizeof(sei);
-    sei.fMask = SEE_MASK_NOCLOSEPROCESS;
-    sei.hwnd = nullptr;
-    sei.lpVerb = L"open";
-    sei.lpFile = path.c_str();
-    sei.lpParameters = L"";
-    sei.lpDirectory = nullptr;
-    sei.nShow = SW_SHOW;
-    sei.hInstApp = nullptr;
+    for(iter = args.cbegin(); iter != args.cend(); iter++){
+        const std::wstring &arg = *iter;
 
-    if(!ShellExecuteEx(&sei)){
-        throw std::runtime_error("Failed launching DELGA");
+        if(iter != args.cbegin()){
+            cmdline.push_back(L' ');
+        }
+
+        if(!arg.empty() && arg.find_first_of(L" \t\n\v\"") == arg.npos){
+            cmdline.append(arg);
+
+        }else{
+            cmdline.push_back(L'"');
+            
+            std::wstring::const_iterator iter2;
+            for(iter2 = arg.cbegin(); ; iter2++){
+                int countBackslash = 0;
+                
+                while(iter2 != arg.cend() && *iter2 == L'\\'){
+                    iter2++;
+                    countBackslash++;
+                }
+                
+                if(iter2 == arg.cend()){
+                    // Escape all backslashes, but let the terminating
+                    // double quotation mark we add below be interpreted
+                    // as a metacharacter.
+                    cmdline.append(countBackslash * 2, L'\\');
+                    break;
+
+                }else if(*iter2 == L'"'){
+                    // Escape all backslashes and the following
+                    // double quotation mark.
+                    cmdline.append(countBackslash * 2 + 1, L'\\');
+                    cmdline.push_back(*iter2);
+
+                }else{
+                    // Backslashes aren't special here.
+                    cmdline.append(countBackslash, L'\\');
+                    cmdline.push_back(*iter2);
+                }
+            }
+            
+            cmdline.push_back(L'"');
+        }
     }
 
-    if(sei.hProcess){
-        WaitForSingleObject(sei.hProcess, INFINITE);
-        CloseHandle(sei.hProcess);
+    return cmdline;
+}
+
+void Launcher::pLaunchDelga(){
+    const std::wstring path(pLauncherDirectory + L"\\" + ToWString(pLauncherIni->Get("File")));
+    
+    if(pLaunchArgs.empty()){
+        SHELLEXECUTEINFO sei = {0};
+        sei.cbSize = sizeof(sei);
+        sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+        sei.hwnd = nullptr;
+        sei.lpVerb = L"open";
+        sei.lpFile = path.c_str();
+        sei.lpParameters = nullptr;
+        sei.lpDirectory = nullptr;
+        sei.nShow = SW_SHOW;
+        sei.hInstApp = nullptr;
+
+        if(!ShellExecuteEx(&sei)){
+            throw std::runtime_error("Failed launching DELGA");
+        }
+
+        if(sei.hProcess){
+            WaitForSingleObject(sei.hProcess, INFINITE);
+            CloseHandle(sei.hProcess);
+        }
+
+    }else{
+        wchar_t buffer[MAX_PATH + 1];
+        DWORD size = MAX_PATH;
+        ZeroMemory(&buffer, sizeof(buffer));
+
+        if(RegGetValue(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Drag[en]gine", L"PathEngine",
+        RRF_RT_REG_SZ, nullptr, buffer, &size) != ERROR_SUCCESS){
+            throw std::runtime_error("Failed reading Drag[en]gine installation directory from registry");
+        }
+
+        std::vector<std::wstring> args;
+        args.push_back(std::wstring(buffer) + L"\\Launchers\\Bin\\delauncher-gui.exe");
+        args.push_back(path);
+        args.insert(args.end(), pLaunchArgs.cbegin(), pLaunchArgs.cend());
+
+        const std::wstring cmdline(ArgsToCmdline(args));
+
+        STARTUPINFO si;
+        PROCESS_INFORMATION pi;
+
+        ZeroMemory(&si, sizeof(si));
+        si.cb = sizeof(si);
+        
+        ZeroMemory(&pi, sizeof(pi));
+        
+        if(!CreateProcess(nullptr, (LPWSTR)cmdline.c_str(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)){
+            throw std::runtime_error("Creating process failed");
+        }
+
+        if(pi.hProcess){
+            WaitForSingleObject(pi.hProcess, INFINITE);
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+        }
     }
 }
 
