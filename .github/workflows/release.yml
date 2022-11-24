@@ -9,6 +9,8 @@ on:
         type: string
         default: 'X.Y{.Z}'
 
+on: [repository_dispatch]
+
 jobs:
   build_linux:
     uses: ./.github/workflows/build_linux.yml
