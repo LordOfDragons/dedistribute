@@ -62,7 +62,7 @@ jobs:
           path: windows_direct/build
       
       - name: Build
-        run: scons version=${version}
+        run: scons version=${{ env.version }}
       
       - name: Upload Artifacts
         uses: ncipollo/release-action@v1
@@ -73,8 +73,8 @@ jobs:
           draft: false
           prerelease: false
           commit: 'main'
-          tag: 'v${version}'
-          name: 'Distribute DELGA ${version}'
+          tag: 'v${{ env.version }}'
+          name: 'Distribute DELGA ${{ env.version }}'
           body: |
-            Distribute DELGA files for projects based on Drag[en]gine Version ${version} . See included README.md on instructions on how to use the distribution files.
-          artifacts: build/distribution/distribute-delga-${version}.zip
+            Distribute DELGA files for projects based on Drag[en]gine Version ${{ env.version }} . See included README.md on instructions on how to use the distribution files.
+          artifacts: build/distribution/distribute-delga-${{ env.version }}.zip
