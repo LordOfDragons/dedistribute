@@ -31,7 +31,7 @@ jobs:
     needs: [build_linux, build_windows, build_windows_direct]
     
     env:
-      version: ${{ github.event.client_payload.version ?? github.event.client_payload.version || github.event.inputs.version }}
+      version: ${{ github.event.client_payload.version && github.event.client_payload.version || github.event.inputs.version }}
       
     steps:
       - uses: actions/checkout@v3
