@@ -165,7 +165,7 @@ void Launcher::pLaunchDelga(){
         sei.hInstApp = nullptr;
 
         if(!ShellExecuteEx(&sei)){
-            throw std::runtime_error("Failed launching DELGA");
+            throw std::runtime_error("Failed launching DELGA.\n\nPlease Reinstall Game.");
         }
 
         if(sei.hProcess){
@@ -180,7 +180,7 @@ void Launcher::pLaunchDelga(){
 
         if(RegGetValue(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Drag[en]gine", L"PathEngine",
         RRF_RT_REG_SZ, nullptr, buffer, &size) != ERROR_SUCCESS){
-            throw std::runtime_error("Failed reading Drag[en]gine installation directory from registry");
+            throw std::runtime_error("Failed reading Drag[en]gine installation directory from registry.\n\nPlease Reinstall Game.");
         }
 
         std::vector<std::wstring> args;
@@ -199,7 +199,7 @@ void Launcher::pLaunchDelga(){
         ZeroMemory(&pi, sizeof(pi));
         
         if(!CreateProcess(nullptr, (LPWSTR)cmdline.c_str(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)){
-            throw std::runtime_error("Creating process failed");
+            throw std::runtime_error("Creating process failed.\n\nPlease Reinstall Game.");
         }
 
         if(pi.hProcess){
@@ -225,6 +225,7 @@ _In_ LPWSTR    lpCmdLine, _In_ int nCmdShow)
     }catch(const std::exception &e){
         std::wstring message(L"Failed running launcher:\n");
         message += Launcher::ToWString(std::string(e.what()));
+        message += L"\n\nPlease Reinstall Game.";
         MessageBoxW(NULL, message.c_str(), L"Error", MB_OK);
         return -1;
     }
