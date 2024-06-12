@@ -38,38 +38,11 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      with:
-        lfs: false
-        submodules: 'recursive'
-        ref: master
-    
-    - name: Create LFS file hash list
-      run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-objects-id
-
-    - name: Restore LFS Cache
-      uses: actions/cache@v4
-      id: lfs-cache
-      with:
-        path: .git/lfs
-        key: lfs-cache-${{ hashFiles('.lfs-objects-id') }}
-        restore-keys: lfs-cache-
-
-    - name: Git LFS Pull
-      run: |
-        git lfs pull 2>&1 | tee lfs.log
-        if grep -q "error:" "lfs.log" ; then
-          git lfs logs last
-          exit 1
-        fi
 
     - name: Install required packages
       if: matrix.build-mode == 'manual'
       run: |
-        sudo apt -y update
-        sudo apt -y install build-essential scons cmake autoconf libtool nasm \
-          patchelf libx11-dev libxrandr-dev libgl-dev libxi-dev libpulse-dev \
-          libasound2-dev portaudio19-dev libxft-dev extra-cmake-modules \
-          flex bison gettext doxygen
+        sudo apt -y install build-essential scons
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v3
@@ -92,14 +65,8 @@ jobs:
     - if: matrix.build-mode == 'manual'
       shell: bash
       run: |
-        cp ${{ github.workspace }}/.github/workflows/custom_linux.py custom.py
-        sed -i -e 's/{ReleaseVersion}/codeql/g' custom.py
-        sed -i -e 's/{BuildVersion}/9999/g' custom.py
-        scons -j 1 lib_openxr
-        scons -j 1 lib_openvr
-        scons -j 1 lib_libjpeg
-        scons -j 1 lib_libwebm
-        scons -j 14 archive installer
+        cd linux
+        scons
         exit 1
 
     - name: Perform CodeQL Analysis
