@@ -44,19 +44,19 @@ jobs:
           sudo apt -y install build-essential scons
       
       - name: Get Linux Archives
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: archives-linux
           path: linux/build
       
       - name: Get Windows Archives
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: archives-windows
           path: windows/build
       
       - name: Get Windows Direct Archives
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: archives-windows-direct
           path: windows_direct/build
