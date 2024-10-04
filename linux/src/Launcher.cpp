@@ -189,10 +189,44 @@ bool Launcher::pSystemCanLaunchDelga(){
 void Launcher::pInstallEngine(){
 	printf("Install game engine using installer: %s\n", pFilenameInstaller.Pointer());
 	int returnValue;
+	String cmdline;
+	
+	// try x-terminal-emulator (debian)
+	printf("Trying x-terminal-emulator\n");
+	cmdline = "x-terminal-emulator -e \"";
+	cmdline += pLauncherDirectory + pFilenameInstaller;
+	cmdline += " --yes";
+	cmdline += '"';
+	
+	returnValue = system(cmdline.Pointer());
+	if(WIFEXITED(returnValue)){
+		printf("Installation Exit Status: %d\n", WEXITSTATUS(returnValue));
+		
+		switch(WEXITSTATUS(returnValue)){
+		case 0:
+			return;
+			
+		case 1: // installer
+		case 130: // bash: ctrl+c
+			throw Exception("Installation cancelled");
+			
+		case 127: // bash: command not found
+			break;
+			
+		default:
+			throw Exception("Installation failed");
+		}
+		
+	}else if(WIFSIGNALED(returnValue)){
+		throw Exception("Installation cancelled");
+		
+	}else{
+		// otherwise command not found
+	}
 	
 	// try gnome-terminal (ubuntu)
 	printf("Trying gnome-terminal\n");
-	String cmdline("gnome-terminal --wait -- bash -c \"");
+	cmdline = "gnome-terminal --wait -- bash -c \"";
 	cmdline += pLauncherDirectory + pFilenameInstaller;
 	cmdline += " --yes";
 	cmdline += '"';
@@ -226,6 +260,105 @@ void Launcher::pInstallEngine(){
 	// try xterm
 	printf("Trying xterm\n");
 	cmdline = "xterm -e \"";
+	cmdline += pLauncherDirectory + pFilenameInstaller;
+	cmdline += " --yes";
+	cmdline += '"';
+	
+	returnValue = system(cmdline.Pointer());
+	if(WIFEXITED(returnValue)){
+		printf("Installation Exit Status: %d\n", WEXITSTATUS(returnValue));
+		
+		switch(WEXITSTATUS(returnValue)){
+		case 0:
+			return;
+			
+		case 1: // installer
+		case 130: // bash: ctrl+c
+			throw Exception("Installation cancelled");
+			
+		case 127: // bash: command not found
+			break;
+			
+		default:
+			throw Exception("Installation failed");
+		}
+		
+	}else if(WIFSIGNALED(returnValue)){
+		throw Exception("Installation cancelled");
+		
+	}else{
+		// otherwise command not found
+	}
+	
+	// try urxvt
+	printf("Trying urxvt\n");
+	cmdline = "urxvt -e \"";
+	cmdline += pLauncherDirectory + pFilenameInstaller;
+	cmdline += " --yes";
+	cmdline += '"';
+	
+	returnValue = system(cmdline.Pointer());
+	if(WIFEXITED(returnValue)){
+		printf("Installation Exit Status: %d\n", WEXITSTATUS(returnValue));
+		
+		switch(WEXITSTATUS(returnValue)){
+		case 0:
+			return;
+			
+		case 1: // installer
+		case 130: // bash: ctrl+c
+			throw Exception("Installation cancelled");
+			
+		case 127: // bash: command not found
+			break;
+			
+		default:
+			throw Exception("Installation failed");
+		}
+		
+	}else if(WIFSIGNALED(returnValue)){
+		throw Exception("Installation cancelled");
+		
+	}else{
+		// otherwise command not found
+	}
+	
+	// try rxvt
+	printf("Trying rxvt\n");
+	cmdline = "rxvt -e \"";
+	cmdline += pLauncherDirectory + pFilenameInstaller;
+	cmdline += " --yes";
+	cmdline += '"';
+	
+	returnValue = system(cmdline.Pointer());
+	if(WIFEXITED(returnValue)){
+		printf("Installation Exit Status: %d\n", WEXITSTATUS(returnValue));
+		
+		switch(WEXITSTATUS(returnValue)){
+		case 0:
+			return;
+			
+		case 1: // installer
+		case 130: // bash: ctrl+c
+			throw Exception("Installation cancelled");
+			
+		case 127: // bash: command not found
+			break;
+			
+		default:
+			throw Exception("Installation failed");
+		}
+		
+	}else if(WIFSIGNALED(returnValue)){
+		throw Exception("Installation cancelled");
+		
+	}else{
+		// otherwise command not found
+	}
+	
+	// try termit
+	printf("Trying termit\n");
+	cmdline = "termit -e \"";
 	cmdline += pLauncherDirectory + pFilenameInstaller;
 	cmdline += " --yes";
 	cmdline += '"';
