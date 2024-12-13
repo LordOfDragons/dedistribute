@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           lfs: true
           submodules: 'recursive'
@@ -27,7 +27,7 @@ jobs:
           scons
       
       - name: Store Archives
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.artifactArchive }}
           path: linux/build/launcher64

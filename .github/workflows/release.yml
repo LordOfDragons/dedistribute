@@ -34,7 +34,7 @@ jobs:
       version: ${{ github.event.client_payload.version && github.event.client_payload.version || github.event.inputs.version }}
       
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           lfs: true
           submodules: 'recursive'
@@ -44,19 +44,19 @@ jobs:
           sudo apt -y install build-essential scons
       
       - name: Get Linux Archives
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: archives-linux
           path: linux/build
       
       - name: Get Windows Archives
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: archives-windows
           path: windows/build
       
       - name: Get Windows Direct Archives
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: archives-windows-direct
           path: windows_direct/build
