@@ -26,9 +26,17 @@ jobs:
     with:
       artifactArchive: archives-windows-direct
 
+  build_android:
+    uses: ./.github/workflows/build_android.yml
+    with:
+      artifactArchive: archives-android
+    
   build:
     runs-on: ubuntu-latest
-    needs: [build_linux, build_windows, build_windows_direct]
+    needs: [build_linux,
+        build_windows,
+        build_windows_direct,
+        build_android]
     
     env:
       version: ${{ github.event.client_payload.version && github.event.client_payload.version || github.event.inputs.version }}
@@ -60,6 +68,12 @@ jobs:
         with:
           name: archives-windows-direct
           path: windows_direct/build
+      
+      - name: Get Android Archives
+        uses: actions/download-artifact@v4
+        with:
+          name: archives-android
+          path: android/build
       
       - name: Build
         run: scons version=${{ env.version }}

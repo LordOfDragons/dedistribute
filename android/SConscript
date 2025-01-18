@@ -1,0 +1,40 @@
+import re
+import os
+import datetime
+from string_variable import StringVariable
+from glob_files import globFiles
+
+env = Environment()
+env['PARAMETER_SOURCE'] = ['custom.py']
+env.Tool('runExternalCommand')
+
+params = Variables(['custom.py'])
+params.Add(StringVariable('aar_name',
+	'Launch DELGA AAR file name without extension',
+	'LaunchDelga'))
+params.Update(env)
+
+aarSources = []
+globFiles(env, '.', '*', aarSources, recursive=False)
+globFiles(env, 'lib', '*', aarSources, recursive=False)
+globFiles(env, 'lib/src', '*', aarSources, recursive=True)
+
+def gradleBuildAar(env, target, source):
+	buildDir = source[0].get_dir()
+	script = []
+	script.append('cd "{}" || exit 1'.format(buildDir.abspath))
+	script.append('./gradlew assembleRelease || exit 1')
+	if not env.RunExternalCommand(script):
+		raise Exception('Failed running script')
+
+nodeAar = env.File('lib/build/outputs/aar/lib-release.aar').srcnode()
+
+aar = env.Command(nodeAar, aarSources,
+	env.Action(gradleBuildAar, 'Build Android Launch Delga AAR'))
+env.Clean(aar, 'lib/build')
+
+aarFilename = '{}.aar'.format(env['aar_name'])
+
+finalAar = env.InstallAs(aarFilename, aar)
+
+Default(finalAar)

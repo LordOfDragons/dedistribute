@@ -26,6 +26,8 @@ distribution.extend(env.Install(pathSteamWorks, 'windows_direct/build/Launcher64
 distribution.extend(env.Install(pathSteamWorks, 'linux/build/launcher64'))
 distribution.extend(env.Install(pathSteamWorks, 'data/Launcher.ini'))
 
+distribution.extend(env.Install('distribution/content/android', 'android/build/LaunchDelga.aar'))
+
 def downloadFile(env, target, source):
 	path = target[0].abspath
 	with open(path, 'wb') as f:

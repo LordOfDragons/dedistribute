@@ -20,7 +20,7 @@ def stripBuild(target, source, env):
 	script.append('cp "{}" "{}" || exit 1'.format(src, trg))
 	script.append('strip "{}" || exit 1'.format(trg))
 	if not env.RunExternalCommand(script):
-		raise Exception('Failed running strip')
+		raise Exception('Failed running script')
 
 app = env.Command('launcher64', temp, env.Action(stripBuild, 'Strip $TARGET'))
 

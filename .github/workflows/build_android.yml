@@ -1,0 +1,34 @@
+name: Build Android
+
+on:
+  workflow_call:
+    inputs:
+      artifactArchive:
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+          submodules: 'recursive'
+      
+      - name: Install required packages
+        run: |
+          sudo apt -y install build-essential scons
+      
+      - name: Build
+        run: |
+          cd android
+          scons
+      
+      - name: Store Archives
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifactArchive }}
+          path: android/build/LaunchDelga.aar
+          if-no-files-found: error
