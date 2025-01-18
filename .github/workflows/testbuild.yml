@@ -71,6 +71,6 @@ jobs:
       - name: Store Archives
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.artifactArchive }}
+          name: distribution
           path: build/distribution/distribute-delga-9999.zip
           if-no-files-found: error
