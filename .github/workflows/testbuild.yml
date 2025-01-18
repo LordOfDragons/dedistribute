@@ -67,3 +67,10 @@ jobs:
       
       - name: Build
         run: scons version=9999
+      
+      - name: Store Archives
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifactArchive }}
+          path: build/distribution/distribute-delga-9999.zip
+          if-no-files-found: error
