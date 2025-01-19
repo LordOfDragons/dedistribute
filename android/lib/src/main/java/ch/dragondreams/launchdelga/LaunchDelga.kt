@@ -6,6 +6,7 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
+import kotlin.system.exitProcess
 
 /**
  * Launch DELGA file using the Drag[en]gine Game Engine Launcher.
@@ -39,7 +40,8 @@ class LaunchDelga(
     /**
      * Launch DELGA file using the store settings.
      *
-     * If the launching succeeds Activity.finish() is called and the activity stops.
+     * If the launching succeeds Activity.finish() and exitProcess(0) is called and the
+     * activity stops.
      *
      * In case of failure an UI error dialog is shown. The caller has to do nothing.
      * Once the dialog is closed Activity.finish() is called or launch() is called again.
@@ -60,6 +62,7 @@ class LaunchDelga(
         try {
             activity.startActivity(intent)
             activity.finish()
+            exitProcess(0)
 
         } catch (e: ActivityNotFoundException) {
             activity.runOnUiThread {
@@ -83,6 +86,7 @@ class LaunchDelga(
         builder.setPositiveButton("Close") { dialog: DialogInterface?, _: Int ->
             dialog?.cancel()
             activity.finish()
+            exitProcess(0)
         }
         builder.create().show()
     }
