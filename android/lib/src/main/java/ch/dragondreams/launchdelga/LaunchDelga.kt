@@ -55,6 +55,7 @@ class LaunchDelga(
             DelgaAssetProvider.getUriForFile(delgaAssetFilename, authority),
             DelgaAssetProvider.DELGA_MIME_TYPE)
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        intent.putExtra(EXTRA_OWNER_PACKAGE, activity.packageName)
 
         try {
             activity.startActivity(intent)
@@ -90,5 +91,7 @@ class LaunchDelga(
         private const val TAG = "LaunchableDelga"
 
         const val ACTION_LAUNCH_DELGA = "ch.dragondreams.delauncher.LAUNCH_DELGA"
+
+        const val EXTRA_OWNER_PACKAGE = "ownerPackage"
     }
 }
