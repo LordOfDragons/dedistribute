@@ -81,7 +81,7 @@ jobs:
       - name: Repack
         run: |
           mkdir -p repack
-          unzip linux/build/distribution/distribute-delga-${{ env.version }}.zip -d repack
+          unzip build/distribution/distribute-delga-${{ env.version }}.zip -d repack
           chmod a+x repack/steamworks/install-dragengine-*-linux64.sh
           chmod a+x repack/steamworks/launcher64
           ( cd repack && zip -r ../build/distribution/distribute-delga-${{ env.version }}.zip * )
