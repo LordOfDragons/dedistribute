@@ -26,7 +26,11 @@
 #include "Exception.h"
 
 File::File(const String &filename) :
-pFile(fopen(filename, "r")){
+pFile(fopen(filename, "r"))
+{
+	if(!pFile){
+		throw Exception(String("Failed open file: ") + filename);
+	}
 }
 
 File::~File(){

@@ -29,6 +29,13 @@
 class LauncherIni;
 
 class Launcher{
+public:
+	struct sEngineInfo{
+		String version;
+		bool distroMaintained;
+		String distroMaintainedUpdateInfoUrl;
+	};
+	
 private:
 	String pLauncherDirectory;
 	LauncherIni *pLauncherIni;
@@ -43,9 +50,9 @@ public:
 private:
 	void pFindInstaller();
 	String pGetInstallerEngineVersion();
-	String pGetInstalledEngineVersion();
-	bool pCompareEngineVersion(const String &a, const String &b);
+	sEngineInfo pGetInstalledEngineInfo();
+	int pCompareEngineVersion(const String &a, const String &b);
 	bool pSystemCanLaunchDelga();
 	void pInstallEngine();
-	void pLaunchDelga();
+	int pLaunchDelga();
 };

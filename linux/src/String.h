@@ -36,7 +36,8 @@ public:
 	~String();
 	
 	int Length() const;
-	int Find(char delimiter) const;
+	int Find(char delimiter, int from = 0) const;
+	int FindString(const char *string, int from = 0) const;
 	String SubString(int from) const;
 	String SubString(int from, int to) const;
 	const char *Pointer() const;

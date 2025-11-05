@@ -56,12 +56,17 @@ int String::Length() const{
 	return strlen(pString);
 }
 
-int String::Find(char delimiter) const{
-	const char *s = strchr(pString, delimiter);
+int String::Find(char delimiter, int from) const{
+	const char *s = strchr(pString + from, delimiter);
 	if(s){
 		return (int)(s - pString);
 	}
 	return -1;
+}
+
+int String::FindString(const char *string, int from) const{
+	const char * const s = strstr(pString + from, string);
+	return s ? (int)(s - pString) : -1;
 }
 
 String String::SubString(int from) const{
@@ -77,7 +82,7 @@ String String::SubString(int from, int to) const{
 		to += len;
 	}
 	
-	if(from < 0 || from >= len || to < 0 || to > len){
+	if(from < 0 || from >= len || to < 0 || to > len || from > to){
 		throw Exception("Index out of bounds");
 	}
 	

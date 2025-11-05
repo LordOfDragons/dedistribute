@@ -1,6 +1,13 @@
 env = Environment()
 env.Tool('runExternalCommand')
 
+params = Variables(['../custom.py'])
+params.Add(BoolVariable('with_debug', 'Build with debug symbols for GDB usage', False))
+params.Update(env)
+
+if env['with_debug']:
+	env.Append(CXXFLAGS=['-g'])
+
 env.Append(LINKFLAGS=['-static'])
 
 sources = []
@@ -9,8 +16,6 @@ sources.append('src/LauncherIni.cpp')
 sources.append('src/String.cpp')
 sources.append('src/File.cpp')
 sources.append('src/Exception.cpp')
-
-temp = env.Program('launcher64_temp', sources)
 
 def stripBuild(target, source, env):
 	src = source[0].abspath
@@ -22,6 +27,11 @@ def stripBuild(target, source, env):
 	if not env.RunExternalCommand(script):
 		raise Exception('Failed running script')
 
-app = env.Command('launcher64', temp, env.Action(stripBuild, 'Strip $TARGET'))
+if env['with_debug']:
+	app = env.Program('launcher64', sources)
+	
+else:
+	temp = env.Program('launcher64_temp', sources)
+	app = env.Command('launcher64', temp, env.Action(stripBuild, 'Strip $TARGET'))
 
 Default(app)

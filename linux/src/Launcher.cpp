@@ -33,6 +33,7 @@
 #include "LauncherIni.h"
 #include "Exception.h"
 #include "String.h"
+#include "File.h"
 
 Launcher::Launcher(int argc, char **argv) :
 pLauncherIni(nullptr)
@@ -66,8 +67,7 @@ int Launcher::Run(){
 	pLauncherIni = new LauncherIni(pLauncherDirectory + "Launcher.ini");
 	
 	pFindInstaller();
-	pLaunchDelga();
-	return 0;
+	return pLaunchDelga();
 }
 
 void Launcher::pFindInstaller(){
@@ -99,10 +99,78 @@ String Launcher::pGetInstallerEngineVersion(){
 	return pFilenameInstaller.SubString(19, pFilenameInstaller.Length() - 11);
 }
 
-String Launcher::pGetInstalledEngineVersion(){
+Launcher::sEngineInfo Launcher::pGetInstalledEngineInfo(){
+	const char *value = getenv("XDG_DATA_DIRS");
+	if(value){
+		String dataDirs(value);
+		int from = 0;
+		while(true){
+			int to = dataDirs.Find(':', from);
+			if(to == -1){
+				to = dataDirs.Length();
+			}
+			
+			const String path(dataDirs.SubString(from, to));
+			
+			String filename(path + "/metainfo/ch.dragondreams.delauncher.metainfo.xml");
+			try{
+				File file(filename);
+				sEngineInfo info{};
+				
+				while(!file.Eof()){
+					const String line(file.ReadLine());
+					int tagBegin = line.FindString("<value key=\"DragonDreams::EngineVersion\">");
+					if(tagBegin != -1){
+						const int valueBegin = tagBegin + 41;
+						const int tagEnd = line.FindString("</value>", valueBegin);
+						if(tagEnd == -1){
+							throw Exception("Invalid metainfo format");
+						}
+						info.version = line.SubString(valueBegin, tagEnd);
+						continue;
+					}
+					
+					tagBegin = line.FindString("<value key=\"DragonDreams::DistroMaintained\">");
+					if(tagBegin != -1){
+						const int valueBegin = tagBegin + 44;
+						const int tagEnd = line.FindString("</value>", valueBegin);
+						if(tagEnd == -1){
+							throw Exception("Invalid metainfo format");
+						}
+						info.distroMaintained = line.SubString(valueBegin, tagEnd) == "true";
+						continue;
+					}
+					
+					tagBegin = line.FindString("<value key=\"DragonDreams::DistroMaintainedUpdateUrl\">");
+					if(tagBegin != -1){
+						const int valueBegin = tagBegin + 53;
+						const int tagEnd = line.FindString("</value>", valueBegin);
+						if(tagEnd == -1){
+							throw Exception("Invalid metainfo format");
+						}
+						info.distroMaintainedUpdateInfoUrl = line.SubString(valueBegin, tagEnd);
+						continue;
+					}
+				}
+				
+				if(info.version.Length() > 0){
+					return info;
+				}
+				
+			}catch(...){
+				// file does not exist or can not be read. ignore it
+			}
+			
+			if(to == dataDirs.Length()){
+				break;
+			}
+			from = to + 1;
+		}
+	}
+	
 	FILE * const cmdline = popen("delauncher --version", "r");
 	if(!cmdline){
-		return String();
+		return {};
 	}
 	
 	char buffer[16];
@@ -114,10 +182,12 @@ String Launcher::pGetInstalledEngineVersion(){
 	
 	pclose(cmdline);
 	
-	return String(buffer);
+	sEngineInfo info{};
+	info.version = buffer;
+	return info;
 }
 
-bool Launcher::pCompareEngineVersion(const String &a, const String &b){
+int Launcher::pCompareEngineVersion(const String &a, const String &b){
 	const char *ptrA = a.Pointer();
 	const char *ptrB = b.Pointer();
 	
@@ -393,76 +463,70 @@ void Launcher::pInstallEngine(){
 	throw Exception("No terminal found to run installer");
 }
 
-void Launcher::pLaunchDelga(){
+int Launcher::pLaunchDelga(){
 	// install the game engine if game engine is not installed (version=0) or not newer
 	const String requiredVersion(pGetInstallerEngineVersion());
-	const String installedVersion(pGetInstalledEngineVersion());
+	const sEngineInfo installedInfo(pGetInstalledEngineInfo());
 	
 	printf("Required game engine version: %s\n", requiredVersion.Pointer());
-	printf("Installed game engine version: %s\n", installedVersion.Pointer());
 	
-	if(pCompareEngineVersion(requiredVersion, installedVersion) > 0){
+	if(installedInfo.distroMaintained){
+		printf("Installed game engine version: %s (distro managed)\n", installedInfo.version.Pointer());
+		
+	}else{
+		printf("Installed game engine version: %s\n", installedInfo.version.Pointer());
+	}
+	
+	if(pCompareEngineVersion(requiredVersion, installedInfo.version) > 0){
+		if(installedInfo.distroMaintained){
+			const int returnValue = system("xmessage -center "
+				"'Required version of Drag[en]gine can not be installed\n"
+				"since Drag[en]gine is managed by system distro.\n"
+				"Please do manual update.'"
+				" -button Close:0,'Update Info':2");
+			
+			if(WIFEXITED(returnValue) && WEXITSTATUS(returnValue) == 2){
+				String cmdline("xdg-open '");
+				cmdline += installedInfo.distroMaintainedUpdateInfoUrl;
+				cmdline += "'";
+				system(cmdline);
+			}
+			return 2;
+		}
+		
 		pInstallEngine();
 	}
 	
-	// check again if system knows how to launch delga files. this should
-	// return success otherwise installer failed or user aborted it
-	//
-	// NOTE Ubunut seems to sometimes act up installing mime-types failing to launch
-	//      the game engine albeit
-// 	if(!pSystemCanLaunchDelga()){
-// 		return;
-// 	}
-	
 	// launch delga file. this should work now.
-	// 
-	// problem is xdg-open supports no command line arguments. we thus have to
-	// use dragengine launcher directly. we need in the future a way to set
-	// a link "delauncher" which allows the user to select which launcher to
-	// open. the launcher is required to support command line of this form:
-	// 
-	//   delauncher <options> <delga> <arguments>
-	// 
-	// where <options> can be:
-	//   
-	//   --profile=profile
 	const String pathDelga(pLauncherIni->Get("File"));
 	String cmdline;
 	int returnValue;
 	
 	printf("Launch: %s\n", pathDelga.Pointer());
 	
-	/*
-	if(pLaunchArgs.Length() == 0){
-		cmdline = "xdg-open \"";
+	if(pLaunchArgs.Length() > 0){
+		// xdg-open supports no passing of extra arguments, so we use delauncher directly
+		// if extra arguments are given. this will fail if dragengine is installed using
+		// sandbox methods like flatpak. if we want to handle this properly we have to use
+		// 'xdg-mime query default application/dragengine-delga' to locate the .desktop
+		// file and parse the Exec= line to get the actual command to launch.
+		cmdline = "delauncher '";
 		cmdline += pLauncherDirectory + pathDelga;
-		cmdline += '"';
+		cmdline += "' ";
+		cmdline += pLaunchArgs;
 		
-		exitCode = system(cmdline);
-		switch( exitCode ){
-		case 0: // success
-		case 130: // bash control+c
-			return;
-			
-		default:
-			break;
-		}
-		
-		// someting went wrong. try using delauncher-gui directly
+	}else{
+		cmdline = "xdg-open '";
+		cmdline += pLauncherDirectory + pathDelga;
+		cmdline += "' ";
 	}
-	*/
-	
-	cmdline = "delauncher-gui \"";
-	cmdline += pLauncherDirectory + pathDelga;
-	cmdline += "\" ";
-	cmdline += pLaunchArgs;
 	
 	returnValue = system(cmdline);
 	if(WIFEXITED(returnValue)){
 		switch(WEXITSTATUS(returnValue)){
 		case 0: // success
 		case 130: // bash: ctrl+c
-			return;
+			return 0;
 			
 		default:
 			throw Exception("Failed launching");
@@ -470,6 +534,7 @@ void Launcher::pLaunchDelga(){
 		
 	}else if(WIFSIGNALED(returnValue)){
 		// most probably ctrl+c
+		return 1;
 		
 	}else{
 		throw Exception("Failed launching");
