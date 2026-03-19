@@ -42,7 +42,7 @@ jobs:
       version: ${{ github.event.client_payload.version && github.event.client_payload.version || github.event.inputs.version }}
       
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           lfs: true
           submodules: 'recursive'
@@ -52,25 +52,25 @@ jobs:
           sudo apt -y install build-essential scons
       
       - name: Get Linux Archives
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: archives-linux
           path: linux/build
       
       - name: Get Windows Archives
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: archives-windows
           path: windows/build
       
       - name: Get Windows Direct Archives
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: archives-windows-direct
           path: windows_direct/build
       
       - name: Get Android Archives
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: archives-android
           path: android/build
@@ -87,7 +87,7 @@ jobs:
           ( cd repack && zip -r ../build/distribution/distribute-delga-${{ env.version }}.zip * )
       
       - name: Upload Artifacts
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@v1.21
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           allowUpdates: false

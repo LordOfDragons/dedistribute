@@ -32,7 +32,7 @@ jobs:
         build_android]
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           lfs: true
           submodules: 'recursive'
@@ -42,25 +42,25 @@ jobs:
           sudo apt -y install build-essential scons
       
       - name: Get Linux Archives
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: archives-linux
           path: linux/build
       
       - name: Get Windows Archives
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: archives-windows
           path: windows/build
       
       - name: Get Windows Direct Archives
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: archives-windows-direct
           path: windows_direct/build
       
       - name: Get Android Archives
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: archives-android
           path: android/build
@@ -69,7 +69,7 @@ jobs:
         run: scons version=9999
       
       - name: Store Archives
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: distribution
           path: build/distribution/distribute-delga-9999.zip
