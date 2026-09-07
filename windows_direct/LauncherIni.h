@@ -1,7 +1,7 @@
 /* 
  * Drag[en]gine Windows Launcher
  *
- * Copyright (C) 2022, Roland Plüss (roland@rptd.ch)
+ * Copyright (C) 2026, DragonDreams GmbH (info@dragondreams.ch)
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License 
@@ -39,5 +39,6 @@ public:
 
 	/** Get value. */
 	const std::string &Get(const std::string &key);
+	std::string Get(const std::string& key, const std::string &defaultValue);
 };
 

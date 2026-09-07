@@ -1,7 +1,7 @@
 /* 
  * Drag[en]gine Windows Launcher
  *
- * Copyright (C) 2022, Roland Plüss (roland@rptd.ch)
+ * Copyright (C) 2026, DragonDreams GmbH (info@dragondreams.ch)
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License 
@@ -22,17 +22,19 @@
 #include "resource.h"
 #include "Launcher.h"
 #include "LauncherIni.h"
+#include "Logger.h"
 
 #include <stdexcept>
 #include <sstream>
 #include <iomanip>
 #include <shellapi.h>
-#include <iostream>
+#include <shlobj.h>
 #include <string>
 
 Launcher *Launcher::pTheLauncher = nullptr;
 
-Launcher::Launcher(HINSTANCE hInstance) :
+Launcher::Launcher(Logger& logger, HINSTANCE hInstance) :
+pLogger(logger),
 pInstance(hInstance)
 {
     pTheLauncher = this;
@@ -47,9 +49,12 @@ pInstance(hInstance)
         pLaunchArgs.push_back(szArglist[i]);
     }
     LocalFree(szArglist);
+    logger.Log("Launcher initialized");
+    logger.Log("- Arguments: {}", ToString(ArgsToCmdline(pLaunchArgs)));
 }
 
 Launcher::~Launcher(){
+	pLogger.Log("Launcher terminated");
     pTheLauncher = nullptr;
 }
 
@@ -64,7 +69,9 @@ int Launcher::Run(){
         pLauncherDirectory = pLauncherDirectory.substr(0, pathSeparator);
     }
 
+    pLogger.Log("Reading Launcher.ini '{}'", ToString(pLauncherDirectory + L"\\Launcher.ini"));
     pLauncherIni = std::make_unique<LauncherIni>(pLauncherDirectory + L"\\Launcher.ini");
+    pLogger.Log("- File: {}", pLauncherIni->Get("File", "<missing>"));
 
     std::vector<std::wstring>::iterator argEnd;
     for(argEnd = pLaunchArgs.begin(); argEnd != pLaunchArgs.end(); argEnd++){
@@ -150,64 +157,96 @@ std::wstring Launcher::ArgsToCmdline(const std::vector<std::wstring>& args){
 }
 
 void Launcher::pLaunchDelga(){
+    if (pLaunchArgs.empty()) {
+        if(pLaunchDelgaUsingShellOpen()){
+            return;
+		}
+        //pLogger.LogLastError("Fallback to registry launching.");
+        throw std::runtime_error("Failed launching DELGA.");
+    }
+
+    if(pLaunchDelgaUsingRegPath()){
+        return;
+	}
+    throw std::runtime_error("Failed launching DELGA.");
+}
+
+bool Launcher::pLaunchDelgaUsingShellOpen(){
+    const std::wstring path(pLauncherDirectory + L"\\" + ToWString(pLauncherIni->Get("File")));
+
+    SHELLEXECUTEINFO sei = { 0 };
+    sei.cbSize = sizeof(sei);
+    sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+    sei.hwnd = nullptr;
+    sei.lpVerb = L"open";
+    sei.lpFile = path.c_str();
+    sei.lpParameters = nullptr;
+    sei.lpDirectory = nullptr;
+    sei.nShow = SW_SHOW;
+    sei.hInstApp = nullptr;
+
+    pLogger.Log("Launching DELGA using Shell Open");
+    pLogger.Log("- File: '{}'", ToString(path));
+    if (!ShellExecuteEx(&sei)) {
+        pLogger.LogLastError("Failed launching DELGA.");
+		return false;
+    }
+
+    pLogger.Log("Process launched");
+    if (sei.hProcess) {
+        WaitForSingleObject(sei.hProcess, INFINITE);
+        CloseHandle(sei.hProcess);
+    }
+
+    pLogger.Log("Process finished");
+    return true;
+}
+
+bool Launcher::pLaunchDelgaUsingRegPath(){
     const std::wstring path(pLauncherDirectory + L"\\" + ToWString(pLauncherIni->Get("File")));
     
-    if(pLaunchArgs.empty()){
-        SHELLEXECUTEINFO sei = {0};
-        sei.cbSize = sizeof(sei);
-        sei.fMask = SEE_MASK_NOCLOSEPROCESS;
-        sei.hwnd = nullptr;
-        sei.lpVerb = L"open";
-        sei.lpFile = path.c_str();
-        sei.lpParameters = nullptr;
-        sei.lpDirectory = nullptr;
-        sei.nShow = SW_SHOW;
-        sei.hInstApp = nullptr;
+    pLogger.Log("Launching DELGA using registry path");
+    wchar_t buffer[MAX_PATH + 1];
+    DWORD size = MAX_PATH;
+    ZeroMemory(&buffer, sizeof(buffer));
 
-        if(!ShellExecuteEx(&sei)){
-            throw std::runtime_error("Failed launching DELGA.\n\nPlease Reinstall Game.");
-        }
-
-        if(sei.hProcess){
-            WaitForSingleObject(sei.hProcess, INFINITE);
-            CloseHandle(sei.hProcess);
-        }
-
-    }else{
-        wchar_t buffer[MAX_PATH + 1];
-        DWORD size = MAX_PATH;
-        ZeroMemory(&buffer, sizeof(buffer));
-
-        if(RegGetValue(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Drag[en]gine", L"PathEngine",
-        RRF_RT_REG_SZ, nullptr, buffer, &size) != ERROR_SUCCESS){
-            throw std::runtime_error("Failed reading Drag[en]gine installation directory from registry.\n\nPlease Reinstall Game.");
-        }
-
-        std::vector<std::wstring> args;
-        args.push_back(std::wstring(buffer) + L"\\Launchers\\Bin\\delauncher-gui.exe");
-        args.push_back(path);
-        args.insert(args.end(), pLaunchArgs.cbegin(), pLaunchArgs.cend());
-
-        const std::wstring cmdline(ArgsToCmdline(args));
-
-        STARTUPINFO si;
-        PROCESS_INFORMATION pi;
-
-        ZeroMemory(&si, sizeof(si));
-        si.cb = sizeof(si);
-        
-        ZeroMemory(&pi, sizeof(pi));
-        
-        if(!CreateProcess(nullptr, (LPWSTR)cmdline.c_str(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)){
-            throw std::runtime_error("Creating process failed.\n\nPlease Reinstall Game.");
-        }
-
-        if(pi.hProcess){
-            WaitForSingleObject(pi.hProcess, INFINITE);
-            CloseHandle(pi.hProcess);
-            CloseHandle(pi.hThread);
-        }
+    if (RegGetValue(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Drag[en]gine", L"PathEngine",
+    RRF_RT_REG_SZ, nullptr, buffer, &size) != ERROR_SUCCESS) {
+		pLogger.LogLastError("Failed reading Drag[en]gine installation directory from registry.");
+        throw std::runtime_error("Failed reading Drag[en]gine installation directory from registry.");
     }
+	pLogger.Log("- Drag[en]gine installation directory: '{}'", ToString(buffer));
+
+    std::vector<std::wstring> args;
+    args.push_back(std::wstring(buffer) + L"\\Launchers\\Bin\\delauncher-gui.exe");
+    args.push_back(path);
+    args.insert(args.end(), pLaunchArgs.cbegin(), pLaunchArgs.cend());
+
+    const std::wstring cmdline(ArgsToCmdline(args));
+
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+
+    ZeroMemory(&pi, sizeof(pi));
+
+	pLogger.Log("- Command line: '{}'", ToString(cmdline));
+    if (!CreateProcess(nullptr, (LPWSTR)cmdline.c_str(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+		pLogger.LogLastError("Creating process failed.");
+        throw std::runtime_error("Creating process failed.");
+    }
+
+	pLogger.Log("Process launched");
+    if (pi.hProcess) {
+        WaitForSingleObject(pi.hProcess, INFINITE);
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+    }
+
+	pLogger.Log("Process finished");
+	return true;
 }
 
 /** Entry point. */
@@ -218,14 +257,20 @@ _In_ LPWSTR    lpCmdLine, _In_ int nCmdShow)
     UNREFERENCED_PARAMETER(nCmdShow);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
+    Logger logger;
     try{
-        Launcher launcher(hInstance);
+        Launcher launcher(logger, hInstance);
         return launcher.Run();
 
     }catch(const std::exception &e){
+		logger.Log("Failed running launcher: {}", e.what());
+
         std::wstring message(L"Failed running launcher:\n");
         message += Launcher::ToWString(std::string(e.what()));
         message += L"\n\nPlease Reinstall Game.";
+        message += L"\n\nFor Support please provide log file:";
+        message += L"\n%LocalAppData%\\DELaunchers\\Logs\\launcher_direct.log";
+
         MessageBoxW(NULL, message.c_str(), L"Error", MB_OK);
         return -1;
     }

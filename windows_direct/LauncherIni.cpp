@@ -1,7 +1,7 @@
 /* 
  * Drag[en]gine Windows Launcher
  *
- * Copyright (C) 2022, Roland Plüss (roland@rptd.ch)
+ * Copyright (C) 2026, DragonDreams GmbH (info@dragondreams.ch)
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License 
@@ -66,6 +66,14 @@ const std::string& LauncherIni::Get(const std::string& key){
     const MapEntries::const_iterator iter = pEntries.find(key);
     if(iter == pEntries.cend()){
         throw std::runtime_error(std::string("Key not found: ") + key);
+    }
+    return iter->second;
+}
+
+std::string LauncherIni::Get(const std::string& key, const std::string& defaultValue){
+    const MapEntries::const_iterator iter = pEntries.find(key);
+    if (iter == pEntries.cend()) {
+		return defaultValue;
     }
     return iter->second;
 }
